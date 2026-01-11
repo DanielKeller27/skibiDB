@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Flat-Manager</title>
+    <style>
+        :root {
+            --accent: #007bff;
+            --accent-dark: #0056b3;
+            --bg: #f5f7fa;
+            --card: #ffffff;
+            --text: #222;
+            --shadow: 0 4px 12px rgba(0, 0, 0, .06);
+            --radius: 14px;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        header {
+            background: var(--card);
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+        }
+        header #userName {
+            font-weight: 600;
+            font-size: 1.05rem;
+        }
+        header button {
+            border: none;
+            background: transparent;
+            color: var(--accent);
+            cursor: pointer;
+            font-size: .95rem;
+        }
+        main {
+            flex: 1;
+            display: grid;
+            gap: 20px;
+            padding: 24px;
+            max-width: 520px;
+            width: 100%;
+            margin: auto;
+        }
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: transform .15s;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        .card h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        .card button {
+            border: none;
+            border-radius: 8px;
+            background: var(--accent);
+            color: #fff;
+            padding: 12px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background .2s;
+        }
+        .card button:hover {
+            background: var(--accent-dark);
+        }
+
+        /* SECTION PAGES */
+        .page {
+            display: none;
+            animation: fadeIn .3s;
+        }
+        .page.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .page header {
+            margin-bottom: 20px;
+        }
+        .item {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .done, .bought {
+            text-decoration: line-through;
+            opacity: .55;
+        }
+        .item button {
+            margin-left: 6px;
+            padding: 6px 10px;
+            font-size: .85rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- ===== TOP BAR ===== -->
+    <header>
+        <span id="userName">User Name</span>
+        <button onclick="logout()">Logout</button>
+    </header>
+
+    <!-- ===== DASHBOARD ===== -->
+    <main id="dashboard">
+        <div class="card">
+            <h2>Chores</h2>
+            <button onclick="showPage('chores')">Go to Chores</button>
+        </div>
+        <div class="card">
+            <h2>Groceries</h2>
+            <button onclick="showPage('groceries')">Go to Groceries</button>
+        </div>
+        <div class="card">
+            <h2>Finances</h2>
+            <button onclick="showPage('finances')">Go to Finances</button>
+        </div>
+        <div class="card">
+            <h2>Group</h2>
+            <button onclick="showPage('group')">See Who's Here</button>
+        </div>
+    </main>
+
+    <!-- ===== CHORES PAGE ===== -->
+    <section id="chores" class="page">
+        <header>
+            <span>Chores</span>
+            <button onclick="showPage('dashboard')">← Home</button>
+        </header>
+        <main>
+            <button onclick="addChore()">+ Add chore</button>
+            <div id="choresList"></div>
+        </main>
+    </section>
+
+    <!-- ===== GROCERIES PAGE ===== -->
+    <section id="groceries" class="page">
+        <header>
+            <span>Groceries</span>
+            <button onclick="showPage('dashboard')">← Home</button>
+        </header>
+        <main>
+            <button onclick="addItem()">+ Add item</button>
+            <div id="groceriesList"></div>
+        </main>
+    </section>
+
+    <!-- ===== FINANCES PAGE ===== -->
+    <section id="finances" class="page">
+        <header>
+            <span>Finances</span>
+            <button onclick="showPage('dashboard')">← Home</button>
+        </header>
+        <main>
+            <button onclick="addExpense()">+ Add expense</button>
+            <div id="financesList"></div>
+        </main>
+    </section>
+
+    <!-- ===== GROUP PAGE ===== -->
+    <section id="group" class="page">
+        <header>
+            <span>Group Members</span>
+            <button onclick="showPage('dashboard')">← Home</button>
+        </header>
+        <main>
+            <button onclick="addMember()">+ Add member</button>
+            <div id="groupList"></div>
+        </main>
+    </section>
+
+    <script>
+        /* ---------- USER ---------- */
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{"name":"Guest"}');
+        document.getElementById('userName').textContent = currentUser.name;
+
+        /* ---------- NAV ---------- */
+        function showPage(id) {
+            document.querySelectorAll('.page, #dashboard').forEach(el => el.classList.remove('active'));
+            if (id === 'dashboard') {
+                document.getElementById('dashboard').classList.add('active');
+            } else {
+                document.getElementById(id).classList.add('active');
+                window[`load${id.charAt(0).toUpperCase() + id.slice(1)}`](); // call loader
+            }
+        }
+        function logout() {
+            if (confirm("Log out?")) {
+                localStorage.removeItem('currentUser');
+                location.href = "index.html";
+            }
+        }
+
+        /* ---------- CHORES ---------- */
+        const choresKey = 'choresList';
+        function loadChores() {
+            const chores = JSON.parse(localStorage.getItem(choresKey) || '[]');
+            const list = document.getElementById('choresList');
+            list.innerHTML = '';
+            chores.forEach((c, idx) => {
+                const div = document.createElement('div');
+                div.className = 'item ' + (c.done ? 'done' : '');
+                div.innerHTML = `<span>${c.title}</span>
+                                 <div>
+                                   <button onclick="toggleChore(${idx})">✓</button>
+                                   <button onclick="deleteChore(${idx})">Delete</button>
+                                 </div>`;
+                list.appendChild(div);
+            });
+        }
+        function addChore() {
+            const title = prompt('Chore title:');
+            if (title) {
+                const chores = JSON.parse(localStorage.getItem(choresKey) || '[]');
+                chores.push({ title, done: false });
+                localStorage.setItem(choresKey, JSON.stringify(chores));
+                loadChores();
+            }
+        }
+        function toggleChore(idx) {
+            const chores = JSON.parse(localStorage.getItem(choresKey) || '[]');
+            chores[idx].done = !chores[idx].done;
+            localStorage.setItem(choresKey, JSON.stringify(chores));
+            loadChores();
+        }
+        function deleteChore(idx) {
+            const chores = JSON.parse(localStorage.getItem(choresKey) || '[]');
+            chores.splice(idx, 1);
+            localStorage.setItem(choresKey, JSON.stringify(chores));
+            loadChores();
+        }
+
+        /* ---------- GROCERIES ---------- */
+        const grocerKey = 'groceriesList';
+        function loadGroceries() {
+            const items = JSON.parse(localStorage.getItem(grocerKey) || '[]');
+            const list = document.getElementById('groceriesList');
+            list.innerHTML = '';
+            items.forEach((it, idx) => {
+                const div = document.createElement('div');
+                div.className = 'item ' + (it.bought ? 'bought' : '');
+                div.innerHTML = `<span>${it.name}</span>
+                                 <div>
+                                   <button onclick="toggleItem(${idx})">✓</button>
+                                   <button onclick="deleteItem(${idx})">Delete</button>
+                                 </div>`;
+                list.appendChild(div);
+            });
+        }
+        function addItem() {
+            const name = prompt('Item name:');
+            if (name) {
+                const items = JSON.parse(localStorage.getItem(grocerKey) || '[]');
+                items.push({ name, bought: false });
+                localStorage.setItem(grocerKey, JSON.stringify(items));
+                loadGroceries();
+            }
+        }
+        function toggleItem(idx) {
+            const items = JSON.parse(localStorage.getItem(grocerKey) || '[]');
+            items[idx].bought = !items[idx].bought;
+            localStorage.setItem(grocerKey, JSON.stringify(items));
+            loadGroceries();
+        }
+        function deleteItem(idx) {
+            const items = JSON.parse(localStorage.getItem(grocerKey) || '[]');
+            items.splice(idx, 1);
+            localStorage.setItem(grocerKey, JSON.stringify(items));
+            loadGroceries();
+        }
+
+        /* ---------- FINANCES ---------- */
+        const financeKey = 'expensesList';
+        function loadFinances() {
+            const exps = JSON.parse(localStorage.getItem(financeKey) || '[]');
+            const list = document.getElementById('financesList');
+            list.innerHTML = '';
+            exps.forEach((ex, idx) => {
+                const div = document.createElement('div');
+                div.className = 'item';
+                div.innerHTML = `<span>${ex.user} – $${ex.amount.toFixed(2)} – ${ex.desc}</span>
+                                 <button onclick="deleteExpense(${idx})">Delete</button>`;
+                list.appendChild(div);
+            });
+        }
+        function addExpense() {
+            const user = prompt('Who paid?');
+            const amount = parseFloat(prompt('Amount ($):'));
+            const desc = prompt('Description:');
+            if (user && !isNaN(amount) && desc) {
+                const exps = JSON.parse(localStorage.getItem(financeKey) || '[]');
+                exps.push({ user, amount, desc });
+                localStorage.setItem(financeKey, JSON.stringify(exps));
+                loadFinances();
+            }
+        }
+        function deleteExpense(idx) {
+            const exps = JSON.parse(localStorage.getItem(financeKey) || '[]');
+            exps.splice(idx, 1);
+            localStorage.setItem(financeKey, JSON.stringify(exps));
+            loadFinances();
+        }
+
+        /* ---------- GROUP ---------- */
+        const groupKey = 'groupMembers';
+        function loadGroup() {
+            const members = JSON.parse(localStorage.getItem(groupKey) || '[]');
+            const list = document.getElementById('groupList');
+            list.innerHTML = '';
+            members.forEach((m, idx) => {
+                const div = document.createElement('div');
+                div.className = 'item';
+                div.innerHTML = `<span>${m}</span>
+                                 <button onclick="deleteMember(${idx})">Delete</button>`;
+                list.appendChild(div);
+            });
+        }
+        function addMember() {
+            const name = prompt('Member name:');
+            if (name) {
+                const members = JSON.parse(localStorage.getItem(groupKey) || '[]');
+                members.push(name);
+                localStorage.setItem(groupKey, JSON.stringify(members));
+                loadGroup();
+            }
+        }
+        function deleteMember(idx) {
+            const members = JSON.parse(localStorage.getItem(groupKey) || '[]');
+            members.splice(idx, 1);
+            localStorage.setItem(groupKey, JSON.stringify(members));
+            loadGroup();
+        }
+
+        /* ---------- INITIAL SHOW ---------- */
+        showPage('dashboard');
+    </script>
+</body>
+</html>
