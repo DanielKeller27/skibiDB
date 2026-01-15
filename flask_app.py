@@ -4,12 +4,22 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import pymysql
 import uuid
 import os
+from dotenv import load_dotenv
+
+# Load .env variables
+load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'supersecret'
 
 # ---------- DB HELPERS ---------- #
-db_conf = dict(host='localhost', user='root', password='', database='flatmgr', cursorclass=pymysql.cursors.DictCursor)
+db_conf = dict(
+    host=os.getenv('DB_HOST', 'localhost'),
+    user=os.getenv('DB_USER', 'root'),
+    password=os.getenv('DB_PASSWORD', ''),
+    database=os.getenv('DB_DATABASE', 'skibidb'),
+    cursorclass=pymysql.cursors.DictCursor
+)
 
 def db_write(sql, args=()):
     with pymysql.connect(**db_conf) as conn:
@@ -83,7 +93,14 @@ def home():
 @app.route('/api/chores', methods=['GET'])
 @login_required
 def get_chores():
-    rows = db_read("SELECT id,title,done FROM chores WHERE user_id=%s ORDER BY id DESC", (current_user.id,))
+    rows = db_read("""
+        SELECT c.id, c.title, c.done, gm.name as assigned_to
+        FROM chores c
+        LEFT JOIN assignments a ON c.id = a.chore_id
+        LEFT JOIN group_members gm ON a.group_member_id = gm.id
+        WHERE c.user_id=%s 
+        ORDER BY c.id DESC
+    """, (current_user.id,))
     return jsonify(rows)
 
 @app.route('/api/chores', methods=['POST'])
@@ -135,15 +152,20 @@ def delete_grocery(gid):
 @app.route('/api/expenses', methods=['GET'])
 @login_required
 def get_expenses():
-    rows = db_read("SELECT id,amount,description,date FROM expenses WHERE user_id=%s ORDER BY id DESC", (current_user.id,))
+    rows = db_read("""
+        SELECT e.id, e.amount, e.description, e.date, gm.name as member_name
+        FROM expenses e
+        JOIN group_members gm ON e.group_member_id = gm.id
+        WHERE e.user_id=%s ORDER BY e.id DESC
+    """, (current_user.id,))
     return jsonify(rows)
 
 @app.route('/api/expenses', methods=['POST'])
 @login_required
 def add_expense():
     data = request.json
-    db_write("INSERT INTO expenses (user_id,amount,description) VALUES (%s,%s,%s)",
-             (current_user.id, data['amount'], data['description']))
+    db_write("INSERT INTO expenses (user_id, group_member_id, amount, description) VALUES (%s,%s,%s,%s)",
+             (current_user.id, data['group_member_id'], data['amount'], data['description']))
     return jsonify(success=True)
 
 @app.route('/api/expenses/<int:eid>', methods=['DELETE'])
@@ -152,48 +174,62 @@ def delete_expense(eid):
     db_write("DELETE FROM expenses WHERE id=%s AND user_id=%s", (eid, current_user.id))
     return jsonify(success=True)
 
-# ---------- API : GROUP + CREATE / JOIN ---------- #
+# ---------- API : GROUP MEMBERS ---------- #
 @app.route('/api/group', methods=['GET'])
 @login_required
 def get_group():
-    rows = db_read("""SELECT u.id,u.username FROM users u
-                      JOIN group_members g ON u.id=g.user_id
-                      WHERE g.group_id=(SELECT group_id FROM group_members WHERE user_id=%s LIMIT 1)""", (current_user.id,))
+    rows = db_read("SELECT id, name FROM group_members WHERE user_id=%s ORDER BY id DESC", (current_user.id,))
     return jsonify(rows)
 
-@app.route('/api/group/create', methods=['POST'])
+@app.route('/api/group', methods=['POST'])
 @login_required
-def create_group():
-    name = request.json.get('name') or f"{current_user.username}'s Group"
-    group_uuid = str(uuid.uuid4())
-    db_write("INSERT INTO `groups` (group_name, owner_id, group_uuid) VALUES (%s,%s,%s)",
-             (name, current_user.id, group_uuid))
-    gid = db_read("SELECT LAST_INSERT_ID() as id")[0]['id']
-    db_write("INSERT INTO group_members (group_id,user_id) VALUES (%s,%s)", (gid, current_user.id))
-    return jsonify(success=True, group_uuid=group_uuid)
+def add_group_member():
+    name = request.json['name']
+    db_write("INSERT INTO group_members (user_id, name) VALUES (%s, %s)", (current_user.id, name))
+    return jsonify(success=True)
 
-@app.route('/api/group/join', methods=['POST'])
+@app.route('/api/group/<int:mid>', methods=['DELETE'])
 @login_required
-def join_group():
-    g_uuid = request.json['group_uuid'].strip()
-    rows = db_read("SELECT id FROM `groups` WHERE group_uuid=%s", (g_uuid,))
-    if not rows:
-        return jsonify(success=False, error='Group not found'), 404
-    gid = rows[0]['id']
-    try:
-        db_write("INSERT INTO group_members (group_id,user_id) VALUES (%s,%s)", (gid, current_user.id))
-        return jsonify(success=True)
-    except pymysql.err.IntegrityError:
-        return jsonify(success=False, error='Already member'), 400
+def remove_member(mid):
+    db_write("DELETE FROM group_members WHERE id=%s AND user_id=%s", (mid, current_user.id))
+    return jsonify(success=True)
 
-@app.route('/api/group/<int:uid>', methods=['DELETE'])
+# ---------- API : ASSIGNMENTS ---------- #
+@app.route('/api/assignments', methods=['GET'])
 @login_required
-def remove_member(uid):
-    if uid == current_user.id:
-        return jsonify(success=False, error='Cannot remove yourself'), 400
-    gid_rows = db_read("SELECT group_id FROM group_members WHERE user_id=%s LIMIT 1", (current_user.id,))
-    gid = gid_rows[0]['group_id']
-    db_write("DELETE FROM group_members WHERE group_id=%s AND user_id=%s", (gid, uid))
+def get_assignments():
+    """Get all assignments for the current user."""
+    rows = db_read("""
+        SELECT a.id, a.chore_id, c.title as chore_title, a.group_member_id, gm.name as assigned_to_name,
+               a.due_date, a.created_at
+        FROM assignments a
+        JOIN chores c ON a.chore_id = c.id
+        JOIN group_members gm ON a.group_member_id = gm.id
+        WHERE c.user_id = %s
+        ORDER BY a.created_at DESC
+    """, (current_user.id,))
+    return jsonify(rows)
+
+@app.route('/api/assignments', methods=['POST'])
+@login_required
+def add_assignment():
+    """Assign a chore to a group member."""
+    data = request.json
+    chore_id = data['chore_id']
+    group_member_id = data['group_member_id']
+    due_date = data.get('due_date')  # optional
+    
+    db_write(
+        "INSERT INTO assignments (chore_id, group_member_id, due_date) VALUES (%s, %s, %s)",
+        (chore_id, group_member_id, due_date)
+    )
+    return jsonify(success=True)
+
+@app.route('/api/assignments/<int:aid>', methods=['DELETE'])
+@login_required
+def delete_assignment(aid):
+    """Delete an assignment."""
+    db_write("DELETE FROM assignments WHERE id=%s", (aid,))
     return jsonify(success=True)
 
 if __name__ == '__main__':

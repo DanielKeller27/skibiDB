@@ -5,21 +5,12 @@ CREATE TABLE users (
     password VARCHAR(255)       NOT NULL
 );
 
--- 2. GROUPS (with owner + unique UUID)
-CREATE TABLE `groups` (
-    id         INTEGER PRIMARY KEY AUTO_INCREMENT,
-    group_name VARCHAR(100) NOT NULL,
-    owner_id   INTEGER,
-    group_uuid CHAR(36) UNIQUE NOT NULL
-);
-
--- 3. USER <-> GROUP
+-- 2. GROUP MEMBERS (simple name list per user)
 CREATE TABLE group_members (
-    group_id INTEGER,
-    user_id  INTEGER,
-    PRIMARY KEY (group_id, user_id),
-    FOREIGN KEY (group_id) REFERENCES `groups`(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id)  REFERENCES users(id)   ON DELETE CASCADE
+    id       INTEGER PRIMARY KEY AUTO_INCREMENT,
+    user_id  INTEGER NOT NULL,
+    name     VARCHAR(100) NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- 4. CHORES
@@ -42,10 +33,23 @@ CREATE TABLE groceries (
 
 -- 6. FINANCES
 CREATE TABLE expenses (
-    id          INTEGER PRIMARY KEY AUTO_INCREMENT,
-    user_id     INTEGER NOT NULL,
-    amount      DECIMAL(10,2) NOT NULL,
-    description VARCHAR(200),
-    date        DATE DEFAULT CURRENT_DATE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    id              INTEGER PRIMARY KEY AUTO_INCREMENT,
+    user_id         INTEGER NOT NULL,
+    group_member_id INTEGER NOT NULL,
+    amount          DECIMAL(10,2) NOT NULL,
+    description     VARCHAR(200),
+    date            DATE DEFAULT (CURRENT_DATE),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (group_member_id) REFERENCES group_members(id) ON DELETE CASCADE
+);
+
+-- 7. ASSIGNMENTS (assign a chore to a group member)
+CREATE TABLE assignments (
+    id              INTEGER PRIMARY KEY AUTO_INCREMENT,
+    chore_id        INTEGER NOT NULL,
+    group_member_id INTEGER NOT NULL,
+    due_date        DATE,
+    created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (chore_id)        REFERENCES chores(id) ON DELETE CASCADE,
+    FOREIGN KEY (group_member_id) REFERENCES group_members(id) ON DELETE CASCADE
 );

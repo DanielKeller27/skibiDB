@@ -22,11 +22,9 @@
         body {
             background: var(--bg);
             color: var(--text);
-            display: flex;
-            flex-direction: column;
             min-height: 100vh;
         }
-        header {
+        .top-header {
             background: var(--card);
             box-shadow: var(--shadow);
             display: flex;
@@ -34,25 +32,37 @@
             align-items: center;
             padding: 16px 24px;
         }
-        header #userName {
+        .top-header #userName {
             font-weight: 600;
             font-size: 1.05rem;
         }
-        header button {
+        .top-header button {
             border: none;
             background: transparent;
             color: var(--accent);
             cursor: pointer;
             font-size: .95rem;
         }
-        main {
-            flex: 1;
+        .container {
             display: grid;
-            gap: 20px;
+            grid-template-columns: 280px 1fr;
+            gap: 24px;
             padding: 24px;
-            max-width: 520px;
-            width: 100%;
-            margin: auto;
+            max-width: 1200px;
+            margin: 0 auto;
+            min-height: calc(100vh - 60px);
+        }
+        #dashboard {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        #content-area {
+            min-height: 400px;
+        }
+        .page main {
+            padding: 0;
+            max-width: none;
         }
         .card {
             background: var(--card);
@@ -97,8 +107,18 @@
             from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .page header {
+        .page .section-header {
             margin-bottom: 20px;
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        .welcome-msg {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 300px;
+            color: #888;
+            font-size: 1.1rem;
         }
         .item {
             background: var(--card);
@@ -123,78 +143,71 @@
 </head>
 <body>
     <!-- ===== TOP BAR ===== -->
-    <header>
+    <header class="top-header">
         <span id="userName">User Name</span>
         <button onclick="logout()">Logout</button>
     </header>
 
-    <!-- ===== DASHBOARD ===== -->
-    <main id="dashboard">
-        <div class="card">
-            <h2>Chores</h2>
-            <button onclick="showPage('chores')">Go to Chores</button>
-        </div>
-        <div class="card">
-            <h2>Groceries</h2>
-            <button onclick="showPage('groceries')">Go to Groceries</button>
-        </div>
-        <div class="card">
-            <h2>Finances</h2>
-            <button onclick="showPage('finances')">Go to Finances</button>
-        </div>
-        <div class="card">
-            <h2>Group</h2>
-            <button onclick="showPage('group')">See Who's Here</button>
-        </div>
-    </main>
+    <div class="container">
+        <!-- ===== LEFT: DASHBOARD NAV ===== -->
+        <nav id="dashboard">
+            <div class="card" onclick="showPage('group')">
+                <h2>Group</h2>
+            </div>
+            <div class="card" onclick="showPage('chores')">
+                <h2>Chores</h2>
+            </div>
+            <div class="card" onclick="showPage('assignments')">
+                <h2>Assignments</h2>
+            </div>
+            <div class="card" onclick="showPage('groceries')">
+                <h2>Groceries</h2>
+            </div>
+            <div class="card" onclick="showPage('finances')">
+                <h2>Finances</h2>
+            </div>
+        </nav>
 
-    <!-- ===== CHORES PAGE ===== -->
-    <section id="chores" class="page">
-        <header>
-            <span>Chores</span>
-            <button onclick="showPage('dashboard')">← Home</button>
-        </header>
-        <main>
-            <button onclick="addChore()">+ Add chore</button>
-            <div id="choresList"></div>
-        </main>
-    </section>
+        <!-- ===== RIGHT: CONTENT AREA ===== -->
+        <div id="content-area">
+            <div id="welcome" class="welcome-msg">Select a section from the left</div>
 
-    <!-- ===== GROCERIES PAGE ===== -->
-    <section id="groceries" class="page">
-        <header>
-            <span>Groceries</span>
-            <button onclick="showPage('dashboard')">← Home</button>
-        </header>
-        <main>
-            <button onclick="addItem()">+ Add item</button>
-            <div id="groceriesList"></div>
-        </main>
-    </section>
+            <!-- ===== CHORES PAGE ===== -->
+            <section id="chores" class="page">
+                <div class="section-header">Chores</div>
+                <button class="card" onclick="addChore()" style="width:auto;display:inline-block;padding:12px 20px;">+ Add chore</button>
+                <div id="choresList" style="margin-top:16px;"></div>
+            </section>
 
-    <!-- ===== FINANCES PAGE ===== -->
-    <section id="finances" class="page">
-        <header>
-            <span>Finances</span>
-            <button onclick="showPage('dashboard')">← Home</button>
-        </header>
-        <main>
-            <button onclick="addExpense()">+ Add expense</button>
-            <div id="financesList"></div>
-        </main>
-    </section>
+            <!-- ===== GROCERIES PAGE ===== -->
+            <section id="groceries" class="page">
+                <div class="section-header">Groceries</div>
+                <button class="card" onclick="addItem()" style="width:auto;display:inline-block;padding:12px 20px;">+ Add item</button>
+                <div id="groceriesList" style="margin-top:16px;"></div>
+            </section>
 
-    <!-- ===== GROUP PAGE ===== -->
-    <section id="group" class="page">
-        <header>
-            <span>Group Members</span>
-            <button onclick="showPage('dashboard')">← Home</button>
-        </header>
-        <main>
-            <button onclick="addMember()">+ Add member</button>
-            <div id="groupList"></div>
-        </main>
-    </section>
+            <!-- ===== FINANCES PAGE ===== -->
+            <section id="finances" class="page">
+                <div class="section-header">Finances</div>
+                <button class="card" onclick="addExpense()" style="width:auto;display:inline-block;padding:12px 20px;">+ Add expense</button>
+                <div id="financesList" style="margin-top:16px;"></div>
+            </section>
+
+            <!-- ===== GROUP PAGE ===== -->
+            <section id="group" class="page">
+                <div class="section-header">Group Members</div>
+                <button class="card" onclick="addMember()" style="width:auto;display:inline-block;padding:12px 20px;">+ Add member</button>
+                <div id="groupList" style="margin-top:16px;"></div>
+            </section>
+
+            <!-- ===== ASSIGNMENTS PAGE ===== -->
+            <section id="assignments" class="page">
+                <div class="section-header">Assignments</div>
+                <button class="card" onclick="addAssignment()" style="width:auto;display:inline-block;padding:12px 20px;">+ Assign Chore</button>
+                <div id="assignmentsList" style="margin-top:16px;"></div>
+            </section>
+        </div>
+    </div>
 
     <script>
         /* ---------- USER ---------- */
@@ -203,13 +216,10 @@
 
         /* ---------- NAV ---------- */
         function showPage(id) {
-            document.querySelectorAll('.page, #dashboard').forEach(el => el.classList.remove('active'));
-            if (id === 'dashboard') {
-                document.getElementById('dashboard').classList.add('active');
-            } else {
-                document.getElementById(id).classList.add('active');
-                window[`load${id.charAt(0).toUpperCase() + id.slice(1)}`](); // call loader
-            }
+            document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+            document.getElementById('welcome').style.display = 'none';
+            document.getElementById(id).classList.add('active');
+            window[`load${id.charAt(0).toUpperCase() + id.slice(1)}`](); // call loader
         }
         function logout() {
             if (confirm("Log out?")) {
@@ -219,147 +229,244 @@
         }
 
         /* ---------- CHORES ---------- */
-        const choresKey = 'choresList';
-        function loadChores() {
-            const chores = JSON.parse(localStorage.getItem(choresKey) || '[]');
+        async function loadChores() {
+            const res = await fetch('/api/chores');
+            const chores = await res.json();
             const list = document.getElementById('choresList');
             list.innerHTML = '';
-            chores.forEach((c, idx) => {
+            chores.forEach(c => {
                 const div = document.createElement('div');
                 div.className = 'item ' + (c.done ? 'done' : '');
-                div.innerHTML = `<span>${c.title}</span>
+                const assignedStr = c.assigned_to ? `<span style="color:#888;margin-left:8px;">(${c.assigned_to})</span>` : '';
+                div.innerHTML = `<span>${c.title}${assignedStr}</span>
                                  <div>
-                                   <button onclick="toggleChore(${idx})">✓</button>
-                                   <button onclick="deleteChore(${idx})">Delete</button>
+                                   <button onclick="toggleChore(${c.id})">✓</button>
+                                   <button onclick="deleteChore(${c.id})">Delete</button>
                                  </div>`;
                 list.appendChild(div);
             });
         }
-        function addChore() {
+        async function addChore() {
             const title = prompt('Chore title:');
             if (title) {
-                const chores = JSON.parse(localStorage.getItem(choresKey) || '[]');
-                chores.push({ title, done: false });
-                localStorage.setItem(choresKey, JSON.stringify(chores));
+                await fetch('/api/chores', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title })
+                });
                 loadChores();
             }
         }
-        function toggleChore(idx) {
-            const chores = JSON.parse(localStorage.getItem(choresKey) || '[]');
-            chores[idx].done = !chores[idx].done;
-            localStorage.setItem(choresKey, JSON.stringify(chores));
+        async function toggleChore(id) {
+            await fetch(`/api/chores/${id}`, { method: 'PUT' });
             loadChores();
         }
-        function deleteChore(idx) {
-            const chores = JSON.parse(localStorage.getItem(choresKey) || '[]');
-            chores.splice(idx, 1);
-            localStorage.setItem(choresKey, JSON.stringify(chores));
+        async function deleteChore(id) {
+            await fetch(`/api/chores/${id}`, { method: 'DELETE' });
             loadChores();
         }
 
         /* ---------- GROCERIES ---------- */
-        const grocerKey = 'groceriesList';
-        function loadGroceries() {
-            const items = JSON.parse(localStorage.getItem(grocerKey) || '[]');
+        async function loadGroceries() {
+            const res = await fetch('/api/groceries');
+            const items = await res.json();
             const list = document.getElementById('groceriesList');
             list.innerHTML = '';
-            items.forEach((it, idx) => {
+            items.forEach(it => {
                 const div = document.createElement('div');
                 div.className = 'item ' + (it.bought ? 'bought' : '');
                 div.innerHTML = `<span>${it.name}</span>
                                  <div>
-                                   <button onclick="toggleItem(${idx})">✓</button>
-                                   <button onclick="deleteItem(${idx})">Delete</button>
+                                   <button onclick="toggleItem(${it.id})">✓</button>
+                                   <button onclick="deleteItem(${it.id})">Delete</button>
                                  </div>`;
                 list.appendChild(div);
             });
         }
-        function addItem() {
+        async function addItem() {
             const name = prompt('Item name:');
             if (name) {
-                const items = JSON.parse(localStorage.getItem(grocerKey) || '[]');
-                items.push({ name, bought: false });
-                localStorage.setItem(grocerKey, JSON.stringify(items));
+                await fetch('/api/groceries', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name })
+                });
                 loadGroceries();
             }
         }
-        function toggleItem(idx) {
-            const items = JSON.parse(localStorage.getItem(grocerKey) || '[]');
-            items[idx].bought = !items[idx].bought;
-            localStorage.setItem(grocerKey, JSON.stringify(items));
+        async function toggleItem(id) {
+            await fetch(`/api/groceries/${id}`, { method: 'PUT' });
             loadGroceries();
         }
-        function deleteItem(idx) {
-            const items = JSON.parse(localStorage.getItem(grocerKey) || '[]');
-            items.splice(idx, 1);
-            localStorage.setItem(grocerKey, JSON.stringify(items));
+        async function deleteItem(id) {
+            await fetch(`/api/groceries/${id}`, { method: 'DELETE' });
             loadGroceries();
         }
 
         /* ---------- FINANCES ---------- */
-        const financeKey = 'expensesList';
-        function loadFinances() {
-            const exps = JSON.parse(localStorage.getItem(financeKey) || '[]');
+        async function loadFinances() {
+            const res = await fetch('/api/expenses');
+            const exps = await res.json();
             const list = document.getElementById('financesList');
             list.innerHTML = '';
-            exps.forEach((ex, idx) => {
+            exps.forEach(ex => {
                 const div = document.createElement('div');
                 div.className = 'item';
-                div.innerHTML = `<span>${ex.user} – $${ex.amount.toFixed(2)} – ${ex.desc}</span>
-                                 <button onclick="deleteExpense(${idx})">Delete</button>`;
+                div.innerHTML = `<span><strong>${ex.member_name}</strong> – $${parseFloat(ex.amount).toFixed(2)} – ${ex.description || 'No description'}</span>
+                                 <button onclick="deleteExpense(${ex.id})">Delete</button>`;
                 list.appendChild(div);
             });
         }
-        function addExpense() {
-            const user = prompt('Who paid?');
-            const amount = parseFloat(prompt('Amount ($):'));
-            const desc = prompt('Description:');
-            if (user && !isNaN(amount) && desc) {
-                const exps = JSON.parse(localStorage.getItem(financeKey) || '[]');
-                exps.push({ user, amount, desc });
-                localStorage.setItem(financeKey, JSON.stringify(exps));
-                loadFinances();
+        async function addExpense() {
+            // Load group members
+            const groupRes = await fetch('/api/group');
+            const members = await groupRes.json();
+            
+            if (members.length === 0) {
+                alert('No group members available. Add people to your group first.');
+                return;
             }
+
+            // Select member
+            const memberOptions = members.map((m, i) => `${i + 1}. ${m.name}`).join('\n');
+            const memberIdx = parseInt(prompt(`Who paid?\n${memberOptions}`)) - 1;
+            if (isNaN(memberIdx) || memberIdx < 0 || memberIdx >= members.length) return;
+
+            const amount = parseFloat(prompt('Amount ($):'));
+            if (isNaN(amount)) return;
+
+            const description = prompt('Description:');
+
+            await fetch('/api/expenses', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    group_member_id: members[memberIdx].id,
+                    amount, 
+                    description 
+                })
+            });
+            loadFinances();
         }
-        function deleteExpense(idx) {
-            const exps = JSON.parse(localStorage.getItem(financeKey) || '[]');
-            exps.splice(idx, 1);
-            localStorage.setItem(financeKey, JSON.stringify(exps));
+        async function deleteExpense(id) {
+            await fetch(`/api/expenses/${id}`, { method: 'DELETE' });
             loadFinances();
         }
 
         /* ---------- GROUP ---------- */
-        const groupKey = 'groupMembers';
-        function loadGroup() {
-            const members = JSON.parse(localStorage.getItem(groupKey) || '[]');
+        async function loadGroup() {
+            const res = await fetch('/api/group');
+            const members = await res.json();
             const list = document.getElementById('groupList');
             list.innerHTML = '';
-            members.forEach((m, idx) => {
+            members.forEach(m => {
                 const div = document.createElement('div');
                 div.className = 'item';
-                div.innerHTML = `<span>${m}</span>
-                                 <button onclick="deleteMember(${idx})">Delete</button>`;
+                div.innerHTML = `<span>${m.name}</span>
+                                 <button onclick="deleteMember(${m.id})">Delete</button>`;
                 list.appendChild(div);
             });
         }
-        function addMember() {
-            const name = prompt('Member name:');
+        async function addMember() {
+            const name = prompt('Person name:');
             if (name) {
-                const members = JSON.parse(localStorage.getItem(groupKey) || '[]');
-                members.push(name);
-                localStorage.setItem(groupKey, JSON.stringify(members));
+                await fetch('/api/group', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name })
+                });
                 loadGroup();
             }
         }
-        function deleteMember(idx) {
-            const members = JSON.parse(localStorage.getItem(groupKey) || '[]');
-            members.splice(idx, 1);
-            localStorage.setItem(groupKey, JSON.stringify(members));
+        async function deleteMember(id) {
+            await fetch(`/api/group/${id}`, { method: 'DELETE' });
             loadGroup();
         }
 
+        /* ---------- ASSIGNMENTS ---------- */
+        let assignmentsData = [];
+        let choresData = [];
+        let groupMembersData = [];
+
+        async function loadAssignments() {
+            // Fetch assignments, chores, and group members
+            const [assignRes, choresRes, groupRes] = await Promise.all([
+                fetch('/api/assignments'),
+                fetch('/api/chores'),
+                fetch('/api/group')
+            ]);
+            assignmentsData = await assignRes.json();
+            choresData = await choresRes.json();
+            groupMembersData = await groupRes.json();
+
+            const list = document.getElementById('assignmentsList');
+            list.innerHTML = '';
+            
+            if (assignmentsData.length === 0) {
+                list.innerHTML = '<p style="text-align:center;opacity:.6">No assignments yet</p>';
+                return;
+            }
+
+            assignmentsData.forEach(a => {
+                const div = document.createElement('div');
+                div.className = 'item';
+                const dueStr = a.due_date ? ` (due: ${a.due_date})` : '';
+                div.innerHTML = `<span><strong>${a.chore_title}</strong> → ${a.assigned_to_name}${dueStr}</span>
+                                 <button onclick="deleteAssignment(${a.id})">Delete</button>`;
+                list.appendChild(div);
+            });
+        }
+
+        async function addAssignment() {
+            // Load chores and group members
+            const [choresRes, groupRes] = await Promise.all([
+                fetch('/api/chores'),
+                fetch('/api/group')
+            ]);
+            choresData = await choresRes.json();
+            groupMembersData = await groupRes.json();
+
+            if (choresData.length === 0) {
+                alert('No chores available. Create a chore first.');
+                return;
+            }
+            if (groupMembersData.length === 0) {
+                alert('No group members available. Add people to your group first.');
+                return;
+            }
+
+            // Select chore
+            const choreOptions = choresData.map((c, i) => `${i + 1}. ${c.title}`).join('\n');
+            const choreIdx = parseInt(prompt(`Select a chore:\n${choreOptions}`)) - 1;
+            if (isNaN(choreIdx) || choreIdx < 0 || choreIdx >= choresData.length) return;
+
+            // Select member
+            const memberOptions = groupMembersData.map((m, i) => `${i + 1}. ${m.name}`).join('\n');
+            const memberIdx = parseInt(prompt(`Assign to:\n${memberOptions}`)) - 1;
+            if (isNaN(memberIdx) || memberIdx < 0 || memberIdx >= groupMembersData.length) return;
+
+            // Optional due date
+            const dueDate = prompt('Due date (YYYY-MM-DD) or leave empty:') || null;
+
+            await fetch('/api/assignments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chore_id: choresData[choreIdx].id,
+                    group_member_id: groupMembersData[memberIdx].id,
+                    due_date: dueDate
+                })
+            });
+            loadAssignments();
+        }
+
+        async function deleteAssignment(id) {
+            await fetch(`/api/assignments/${id}`, { method: 'DELETE' });
+            loadAssignments();
+        }
+
         /* ---------- INITIAL SHOW ---------- */
-        showPage('dashboard');
+        // Show welcome message by default
     </script>
 </body>
 </html>
