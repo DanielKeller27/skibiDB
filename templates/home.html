@@ -309,13 +309,61 @@
             const exps = await res.json();
             const list = document.getElementById('financesList');
             list.innerHTML = '';
+            
+            // Sum per person
+            const totals = {};
             exps.forEach(ex => {
                 const div = document.createElement('div');
                 div.className = 'item';
                 div.innerHTML = `<span><strong>${ex.member_name}</strong> – $${parseFloat(ex.amount).toFixed(2)} – ${ex.description || 'No description'}</span>
                                  <button onclick="deleteExpense(${ex.id})">Delete</button>`;
                 list.appendChild(div);
+                
+                // Accumulate totals
+                totals[ex.member_name] = (totals[ex.member_name] || 0) + parseFloat(ex.amount);
             });
+            
+            // Display summary and settlements
+            if (Object.keys(totals).length > 0) {
+                const names = Object.keys(totals);
+                const totalSpent = Object.values(totals).reduce((a, b) => a + b, 0);
+                const perPerson = totalSpent / names.length;
+                
+                // Calculate balances (positive = owed money, negative = owes money)
+                const balances = {};
+                names.forEach(name => {
+                    balances[name] = totals[name] - perPerson;
+                });
+                
+                // Calculate who pays whom
+                const settlements = [];
+                const debtors = names.filter(n => balances[n] < -0.01).map(n => ({ name: n, amount: -balances[n] }));
+                const creditors = names.filter(n => balances[n] > 0.01).map(n => ({ name: n, amount: balances[n] }));
+                
+                let i = 0, j = 0;
+                while (i < debtors.length && j < creditors.length) {
+                    const payment = Math.min(debtors[i].amount, creditors[j].amount);
+                    if (payment > 0.01) {
+                        settlements.push(`${debtors[i].name} → ${creditors[j].name}: $${payment.toFixed(2)}`);
+                    }
+                    debtors[i].amount -= payment;
+                    creditors[j].amount -= payment;
+                    if (debtors[i].amount < 0.01) i++;
+                    if (creditors[j].amount < 0.01) j++;
+                }
+                
+                const summaryDiv = document.createElement('div');
+                summaryDiv.style.cssText = 'margin-top:24px;padding:16px;background:#e9ecef;border-radius:12px;';
+                summaryDiv.innerHTML = '<strong>Summary per person:</strong><br>' + 
+                    Object.entries(totals)
+                        .map(([name, total]) => `${name}: $${total.toFixed(2)}`)
+                        .join('<br>') +
+                    `<br><br><strong>Per person share:</strong> $${perPerson.toFixed(2)}` +
+                    (settlements.length > 0 ? 
+                        '<br><br><strong>Settlements:</strong><br>' + settlements.join('<br>') : 
+                        '<br><br><em>All settled!</em>');
+                list.appendChild(summaryDiv);
+            }
         }
         async function addExpense() {
             // Load group members
@@ -410,7 +458,14 @@
             assignmentsData.forEach(a => {
                 const div = document.createElement('div');
                 div.className = 'item';
-                const dueStr = a.due_date ? ` (due: ${a.due_date})` : '';
+                let dueStr = '';
+                if (a.due_date) {
+                    const date = new Date(a.due_date);
+                    const d = String(date.getDate()).padStart(2, '0');
+                    const m = String(date.getMonth() + 1).padStart(2, '0');
+                    const y = date.getFullYear();
+                    dueStr = ` (due: ${d}.${m}.${y})`;
+                }
                 div.innerHTML = `<span><strong>${a.chore_title}</strong> → ${a.assigned_to_name}${dueStr}</span>
                                  <button onclick="deleteAssignment(${a.id})">Delete</button>`;
                 list.appendChild(div);
@@ -445,8 +500,15 @@
             const memberIdx = parseInt(prompt(`Assign to:\n${memberOptions}`)) - 1;
             if (isNaN(memberIdx) || memberIdx < 0 || memberIdx >= groupMembersData.length) return;
 
-            // Optional due date
-            const dueDate = prompt('Due date (YYYY-MM-DD) or leave empty:') || null;
+            // Optional due date (DD.MM.YYYY format)
+            const dueDateInput = prompt('Due date (DD.MM.YYYY) or leave empty:');
+            let dueDate = null;
+            if (dueDateInput) {
+                const parts = dueDateInput.split('.');
+                if (parts.length === 3) {
+                    dueDate = `${parts[2]}-${parts[1]}-${parts[0]}`; // Convert to YYYY-MM-DD
+                }
+            }
 
             await fetch('/api/assignments', {
                 method: 'POST',
