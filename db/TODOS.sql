@@ -18,7 +18,6 @@ CREATE TABLE chores (
     id       INTEGER PRIMARY KEY AUTO_INCREMENT,
     user_id  INTEGER NOT NULL,
     title    VARCHAR(200) NOT NULL,
-    done     BOOLEAN DEFAULT 0,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 

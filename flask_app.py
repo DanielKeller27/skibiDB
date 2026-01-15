@@ -93,27 +93,14 @@ def home():
 @app.route('/api/chores', methods=['GET'])
 @login_required
 def get_chores():
-    rows = db_read("""
-        SELECT c.id, c.title, c.done, gm.name as assigned_to
-        FROM chores c
-        LEFT JOIN assignments a ON c.id = a.chore_id
-        LEFT JOIN group_members gm ON a.group_member_id = gm.id
-        WHERE c.user_id=%s 
-        ORDER BY c.id DESC
-    """, (current_user.id,))
+    rows = db_read("SELECT id, title FROM chores WHERE user_id=%s ORDER BY id DESC", (current_user.id,))
     return jsonify(rows)
 
 @app.route('/api/chores', methods=['POST'])
 @login_required
 def add_chore():
     title = request.json['title']
-    db_write("INSERT INTO chores (user_id,title,done) VALUES (%s,%s,0)", (current_user.id, title))
-    return jsonify(success=True)
-
-@app.route('/api/chores/<int:cid>', methods=['PUT'])
-@login_required
-def toggle_chore(cid):
-    db_write("UPDATE chores SET done=NOT done WHERE id=%s AND user_id=%s", (cid, current_user.id))
+    db_write("INSERT INTO chores (user_id, title) VALUES (%s, %s)", (current_user.id, title))
     return jsonify(success=True)
 
 @app.route('/api/chores/<int:cid>', methods=['DELETE'])
